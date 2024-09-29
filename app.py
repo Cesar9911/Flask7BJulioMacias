@@ -1,8 +1,7 @@
-from flask import Flask, render_template, request
-import pusher
+from flask import Flask, render_template, request, jsonify
 import mysql.connector
-import pytz
 
+# Conexión a la base de datos
 con = mysql.connector.connect(
     host="185.232.14.52",
     database="u760464709_tst_sep",
@@ -21,22 +20,19 @@ def index():
 @app.route("/reservar", methods=["POST"])
 def reservar():
     nombre = request.form["name"]
-    checkin = request.form["checkin"]
-    checkout = request.form["checkout"]
-    room_type = request.form["room_type"]
-    comentario = request.form["comment"]
+    telefono = request.form["telefono"]
+    fecha = request.form["fecha"]
 
     # Insertar en la base de datos
     if not con.is_connected():
         con.reconnect()
 
     cursor = con.cursor()
-    sql = "INSERT INTO reservaciones (Nombre_Apellido, Fecha_Entrada, Fecha_Salida, Tipo_Habitacion, Comentario) VALUES (%s, %s, %s, %s, %s)"
-    valores = (nombre, checkin, checkout, room_type, comentario)
+    sql = "INSERT INTO reservaciones (Nombre_Apellido, Telefono, Fecha) VALUES (%s, %s, %s)"
+    valores = (nombre, telefono, fecha)
 
     cursor.execute(sql, valores)
     con.commit()
-
     cursor.close()
 
     return f"Reservación realizada para {nombre}."
@@ -48,11 +44,11 @@ def buscar():
         con.reconnect()
 
     cursor = con.cursor()
-    cursor.execute("SELECT * FROM reservaciones ORDER BY id_reservacion DESC")
+    cursor.execute("SELECT id_reservacion, Nombre_Apellido, Telefono, Fecha FROM reservaciones ORDER BY id_reservacion DESC")
     registros = cursor.fetchall()
-    con.close()
+    cursor.close()
 
-    return registros
+    return jsonify(registros)
 
 if __name__ == "__main__":
     app.run(debug=True)
