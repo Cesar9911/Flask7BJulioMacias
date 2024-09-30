@@ -1,5 +1,15 @@
 from flask import Flask, render_template, request, jsonify
 import mysql.connector
+import pusher
+
+# Configurar Pusher
+pusher_client = pusher.Pusher(
+    app_id='YOUR_APP_ID',
+    key='YOUR_APP_KEY',
+    secret='YOUR_APP_SECRET',
+    cluster='YOUR_CLUSTER',
+    ssl=True
+)
 
 # Conexión a la base de datos
 con = mysql.connector.connect(
@@ -17,11 +27,11 @@ def index():
     return render_template("app.html")
 
 # Ruta para guardar los datos de la reservación enviados desde el formulario
-@app.route("/reservar", methods=["POST"])
+@app.route("/reservar", methods=["GET"])
 def reservar():
-    nombre = request.form["name"]
-    telefono = request.form["telefono"]
-    fecha = request.form["fecha"]
+    nombre = request.args.get("name")
+    telefono = request.args.get("telefono")
+    fecha = request.args.get("fecha")
 
     # Insertar en la base de datos
     if not con.is_connected():
@@ -34,6 +44,13 @@ def reservar():
     cursor.execute(sql, valores)
     con.commit()
     cursor.close()
+
+    # Enviar evento a Pusher
+    pusher_client.trigger('reservaciones-channel', 'nueva-reservacion', {
+        'name': nombre,
+        'telefono': telefono,
+        'fecha': fecha
+    })
 
     return f"Reservación realizada para {nombre}."
 
