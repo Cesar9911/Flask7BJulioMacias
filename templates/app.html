@@ -26,7 +26,7 @@
 <body>
     <div class="container mt-5">
         <h2>Reservación de Habitación</h2>
-        <form id="reservationForm" action="/reservar" method="GET">
+        <form id="reservationForm" action="/reservar" method="POST">
             <div class="form-group mb-3">
                 <label for="name">Nombre y Apellido</label>
                 <input type="text" class="form-control" id="name" name="name" placeholder="Nombre y Apellido" required>
@@ -125,28 +125,10 @@
             // Llamada para cargar reservaciones al cargar la página
             cargarReservaciones();
 
-            // Pusher: Suscribirse al canal y evento
-            const pusher = new Pusher('YOUR_APP_KEY', {
-                cluster: 'YOUR_CLUSTER'
-            });
-            const channel = pusher.subscribe('reservaciones-channel');
-            channel.bind('nueva-reservacion', function (data) {
-                // Agregar la nueva reservación a la tabla cuando se reciba el evento
-                const tbody = $("#tbodyReservaciones");
-                tbody.prepend(`
-                    <tr>
-                        <td>${data.id_reservacion}</td>
-                        <td>${data.name}</td>
-                        <td>${data.telefono}</td>
-                        <td>${data.fecha}</td>
-                    </tr>
-                `);
-            });
-
-            // Realizar GET para guardar la reservación
+            // Realizar POST para guardar la reservación
             $("#reservationForm").submit(function (event) {
                 event.preventDefault();
-                $.get("/reservar", $(this).serialize(), function (respuesta) {
+                $.post("/reservar", $(this).serialize(), function (respuesta) {
                     console.log(respuesta);
                     cargarReservaciones(); // Recargar la tabla después de hacer la reservación
                 });
