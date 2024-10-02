@@ -1,10 +1,15 @@
 from flask import Flask, render_template, request, jsonify
+import mysql.connector
+
+# Conexión a la base de datos
+con = mysql.connector.connect(
+    host="185.232.14.52",
+    database="u760464709_tst_sep",
+    user="u760464709_tst_sep_usr",
+    password="dJ0CIAFF="
+)
 
 app = Flask(__name__)
-
-# Lista para almacenar reservaciones en memoria
-reservaciones = []
-contador_id = 1  # Contador para generar ID de reserva
 
 # Ruta principal para la página de reservación
 @app.route("/")
@@ -14,27 +19,36 @@ def index():
 # Ruta para guardar los datos de la reservación enviados desde el formulario
 @app.route("/reservar", methods=["POST"])
 def reservar():
-    global contador_id
     nombre = request.form["name"]
     telefono = request.form["telefono"]
     fecha = request.form["fecha"]
 
-    # Crear una nueva reservación con ID autoincremental
-    nueva_reserva = {
-        "id_reserva": contador_id,
-        "nombre": nombre,
-        "telefono": telefono,
-        "fecha": fecha
-    }
-    reservaciones.append(nueva_reserva)  # Añadir reservación a la lista
-    contador_id += 1  # Incrementar el contador de ID
+    # Insertar en la base de datos
+    if not con.is_connected():
+        con.reconnect()
+
+    cursor = con.cursor()
+    sql = "INSERT INTO reservaciones (Nombre_Apellido, Telefono, Fecha) VALUES (%s, %s, %s)"
+    valores = (nombre, telefono, fecha)
+
+    cursor.execute(sql, valores)
+    con.commit()
+    cursor.close()
 
     return f"Reservación realizada para {nombre}."
 
 # Ruta para obtener y mostrar las reservaciones
 @app.route("/buscar")
 def buscar():
-    return jsonify(reservaciones)  # Retornar las reservaciones como JSON
+    if not con.is_connected():
+        con.reconnect()
+
+    cursor = con.cursor()
+    cursor.execute("SELECT id_reservacion, Nombre_Apellido, Telefono, Fecha FROM reservaciones ORDER BY id_reservacion DESC")
+    registros = cursor.fetchall()
+    cursor.close()
+
+    return jsonify(registros)
 
 if __name__ == "__main__":
     app.run(debug=True)
