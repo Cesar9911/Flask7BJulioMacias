@@ -2,12 +2,12 @@ from flask import Flask, render_template, request, jsonify
 import pusher
 import pytz
 
-# Configurar Pusher con tus credenciales
+# Configurar Pusher con las credenciales proporcionadas
 pusher_client = pusher.Pusher(
-    app_id="YOUR_APP_ID",
-    key="YOUR_KEY",
-    secret="YOUR_SECRET",
-    cluster="YOUR_CLUSTER",
+    app_id="1766032",
+    key="e7b4efacf7381f83e05e",
+    secret="134ff4754740b57ad585",
+    cluster="us2",
     ssl=True
 )
 
