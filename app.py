@@ -3,12 +3,12 @@ import pusher
 
 app = Flask(__name__)
 
-# Configura Pusher con las credenciales del profesor
+# Configura Pusher con tus credenciales
 pusher_client = pusher.Pusher(
-    app_id="1714541",
-    key="2df86616075904231311",
-    secret="2f91d936fd43d8e85a1a",
-    cluster="us2",
+    app_id='YOUR_APP_ID',
+    key='YOUR_KEY',
+    secret='YOUR_SECRET',
+    cluster='YOUR_CLUSTER',
     ssl=True
 )
 
