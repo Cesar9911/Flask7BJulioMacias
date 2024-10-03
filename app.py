@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, jsonify
 import pusher
 import mysql.connector
+import datetime
+import pytz
 
-# Configurar conexión a la base de datos
+# Configurar la conexión a MySQL
 con = mysql.connector.connect(
     host="185.232.14.52",
     database="u760464709_tst_sep",
@@ -10,7 +12,7 @@ con = mysql.connector.connect(
     password="dJ0CIAFF="
 )
 
-# Configurar Pusher con las credenciales proporcionadas
+# Configurar Pusher
 pusher_client = pusher.Pusher(
     app_id="1766032",
     key="e7b4efacf7381f83e05e",
@@ -23,11 +25,16 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
+    # Cerrar la conexión después de renderizar la página
+    con.close()
     return render_template("app.html")
 
-# Ruta para guardar los datos de las reservas enviadas desde el formulario
 @app.route("/reservar", methods=["POST"])
 def reservar():
+    # Verificar si la conexión a la base de datos sigue activa, si no, reconectarla
+    if not con.is_connected():
+        con.reconnect()
+
     nombre = request.form["name"]
     telefono = request.form["telefono"]
     fecha = request.form["fecha"]
@@ -54,11 +61,18 @@ def reservar():
     # Enviar evento a través de Pusher
     pusher_client.trigger("canalReservaciones", "nueva-reserva", nueva_reserva)
 
+    # Cerrar la conexión después de las operaciones
+    con.close()
+
     return jsonify(nueva_reserva), 200
 
 # Ruta para buscar todas las reservas desde la base de datos
 @app.route("/buscar", methods=["GET"])
 def buscar():
+    # Verificar si la conexión a la base de datos sigue activa, si no, reconectarla
+    if not con.is_connected():
+        con.reconnect()
+
     cursor = con.cursor()
     cursor.execute("SELECT id_reserva, Nombre_Apellido, Telefono, Fecha FROM reservas")
     reservas = cursor.fetchall()
@@ -73,6 +87,9 @@ def buscar():
             "telefono": reserva[2],
             "fecha": reserva[3]
         })
+
+    # Cerrar la conexión después de las operaciones
+    con.close()
 
     return jsonify(resultado)
 
