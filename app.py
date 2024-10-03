@@ -1,54 +1,46 @@
-from flask import Flask, render_template, request, jsonify
-import mysql.connector
-
-# Conexión a la base de datos
-con = mysql.connector.connect(
-    host="185.232.14.52",
-    database="u760464709_tst_sep",
-    user="u760464709_tst_sep_usr",
-    password="dJ0CIAFF="
-)
+from flask import Flask, request, jsonify
+import pusher
 
 app = Flask(__name__)
 
-# Ruta principal para la página de reservación
-@app.route("/")
-def index():
-    return render_template("app.html")
+# Configura Pusher con las credenciales del profesor
+pusher_client = pusher.Pusher(
+    app_id="1714541",
+    key="2df86616075904231311",
+    secret="2f91d936fd43d8e85a1a",
+    cluster="us2",
+    ssl=True
+)
 
-# Ruta para guardar los datos de la reservación enviados desde el formulario
-@app.route("/reservar", methods=["POST"])
+# Datos en memoria para reservas (puedes usar una base de datos si prefieres)
+reservas = []
+id_counter = 1
+
+@app.route('/reservar', methods=['POST'])
 def reservar():
-    nombre = request.form["name"]
-    telefono = request.form["telefono"]
-    fecha = request.form["fecha"]
+    global id_counter
+    nombre = request.form['name']
+    telefono = request.form['telefono']
+    fecha = request.form['fecha']
+    
+    # Crear nueva reserva
+    nueva_reserva = {
+        'id_reserva': id_counter,
+        'nombre': nombre,
+        'telefono': telefono,
+        'fecha': fecha
+    }
+    id_counter += 1
+    reservas.append(nueva_reserva)
 
-    # Insertar en la base de datos
-    if not con.is_connected():
-        con.reconnect()
+    # Enviar evento a Pusher para notificar a los clientes
+    pusher_client.trigger('reservaciones-channel', 'nueva-reserva', nueva_reserva)
 
-    cursor = con.cursor()
-    sql = "INSERT INTO reservaciones (Nombre_Apellido, Telefono, Fecha) VALUES (%s, %s, %s)"
-    valores = (nombre, telefono, fecha)
+    return 'Reservación registrada correctamente', 200
 
-    cursor.execute(sql, valores)
-    con.commit()
-    cursor.close()
-
-    return f"Reservación realizada para {nombre}."
-
-# Ruta para obtener y mostrar las reservaciones
-@app.route("/buscar")
+@app.route('/buscar', methods=['GET'])
 def buscar():
-    if not con.is_connected():
-        con.reconnect()
+    return jsonify(reservas)
 
-    cursor = con.cursor()
-    cursor.execute("SELECT id_reservacion, Nombre_Apellido, Telefono, Fecha FROM reservaciones ORDER BY id_reservacion DESC")
-    registros = cursor.fetchall()
-    cursor.close()
-
-    return jsonify(registros)
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
