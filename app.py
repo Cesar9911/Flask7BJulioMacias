@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import pusher
 import mysql.connector
 
+# Conectar a la base de datos
 con = mysql.connector.connect(
     host="185.232.14.52",
     database="u760464709_tst_sep",
@@ -19,9 +20,9 @@ def index():
 # Ruta para guardar los datos enviados desde el formulario
 @app.route("/app/guardar", methods=["POST"])
 def guardar():
-    nombre_apellido = request.form["nombreapellido"]
-    telefono = request.form["telefono"]
-    fecha = request.form["fecha"]
+    nombre_apellido = request.form.get("nombreapellido")
+    telefono = request.form.get("telefono")
+    fecha = request.form.get("fecha")
 
     # Conectar a la base de datos y guardar los datos
     if not con.is_connected():
@@ -51,19 +52,21 @@ def guardar():
         "fecha": fecha
     })
 
-    return "Datos guardados correctamente."
+    return "Datos guardados correctamente.", 200  # Devuelve un código 200 para indicar éxito
 
 # Ruta para buscar y mostrar los registros
 @app.route("/buscar")
 def buscar():
     if not con.is_connected():
         con.reconnect()
+        
     cursor = con.cursor()
     cursor.execute("SELECT * FROM tst0_experiencias ORDER BY Id_Experiencia DESC")
     registros = cursor.fetchall()
-    con.close()
+    cursor.close()  # Cierra el cursor aquí
     
-    return registros
+    # Devuelve los registros como un JSON
+    return jsonify(registros)
 
 if __name__ == "__main__":
     app.run(debug=True)
