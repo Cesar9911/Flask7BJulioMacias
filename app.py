@@ -29,7 +29,7 @@ def guardar():
         con.reconnect()
 
     cursor = con.cursor()
-    sql = "INSERT INTO tst0_experiencias (Nombre_Apellido, Telefono, Fecha) VALUES (%s, %s, %s)"
+    sql = "INSERT INTO tst0_reservas (Nombre_Apellido, Telefono, Fecha) VALUES (%s, %s, %s)"
     val = (nombre_apellido, telefono, fecha)
     
     cursor.execute(sql, val)
