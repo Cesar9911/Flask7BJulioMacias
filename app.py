@@ -23,7 +23,7 @@ def obtener_reservas():
         con.reconnect()
 
     cursor = con.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM reservas")
+    cursor.execute("SELECT * FROM tst0_reservas")
     reservas = cursor.fetchall()
     con.close()
 
@@ -45,7 +45,7 @@ def guardar_reserva():
     if id_reserva:
         # Si se proporciona id_reserva, entonces es una actualización
         sql = """
-        UPDATE reservas SET
+        UPDATE tst0_reservas SET
         Nombre_Apellido = %s,
         Telefono = %s,
         Fecha = %s
@@ -55,7 +55,7 @@ def guardar_reserva():
     else:
         # Si no hay id_reserva, entonces es una inserción
         sql = """
-        INSERT INTO reservas (Nombre_Apellido, Telefono, Fecha)
+        INSERT INTO tst0_reservas (Nombre_Apellido, Telefono, Fecha)
         VALUES (%s, %s, %s)
         """
         val = (nombre_apellido, telefono, fecha)
@@ -74,7 +74,7 @@ def editar_reserva():
 
     id_reserva = request.args.get("id_reserva")
     cursor = con.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM reservas WHERE Id_Reserva = %s", (id_reserva,))
+    cursor.execute("SELECT * FROM tst0_reservas WHERE Id_Reserva = %s", (id_reserva,))
     reserva = cursor.fetchone()
     con.close()
 
@@ -88,7 +88,7 @@ def eliminar_reserva():
 
     id_reserva = request.form["id_reserva"]
     cursor = con.cursor()
-    cursor.execute("DELETE FROM reservas WHERE Id_Reserva = %s", (id_reserva,))
+    cursor.execute("DELETE FROM tst0_reservas WHERE Id_Reserva = %s", (id_reserva,))
     con.commit()
     con.close()
 
