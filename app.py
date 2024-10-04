@@ -12,6 +12,15 @@ con = mysql.connector.connect(
 
 app = Flask(__name__)
 
+# Conexión con Pusher
+pusher_client = pusher.Pusher(
+    app_id="1875540",
+    key="73801e00502db5454777",
+    secret="01c9f9b70103cf9e823a",
+    cluster="us2",
+    ssl=True  # Activar SSL para conexión segura
+)
+
 # Ruta principal que sirve una página de inicio
 @app.route("/")
 def index():
@@ -24,48 +33,51 @@ def guardar():
     telefono = request.form.get("telefono")
     fecha = request.form.get("fecha")
 
-    # Conectar a la base de datos y guardar los datos
+    if not nombre_apellido or not telefono or not fecha:
+        return "Faltan datos requeridos.", 400  # Devuelve un error 400 si faltan datos
+
+    # Verificar si la conexión sigue activa
     if not con.is_connected():
         con.reconnect()
 
-    cursor = con.cursor()
-    sql = "INSERT INTO tst0_reservas (Nombre_Apellido, Telefono, Fecha) VALUES (%s, %s, %s)"
-    val = (nombre_apellido, telefono, fecha)
-    
-    cursor.execute(sql, val)
-    con.commit()
-    cursor.close()
+    try:
+        cursor = con.cursor()
+        sql = "INSERT INTO tst0_reservas (Nombre_Apellido, Telefono, Fecha) VALUES (%s, %s, %s)"
+        val = (nombre_apellido, telefono, fecha)
+        
+        cursor.execute(sql, val)
+        con.commit()
+        cursor.close()
 
-    # Conexión con Pusher
-    pusher_client = pusher.Pusher(
-    app_id = "1875540"
-key = "73801e00502db5454777"
-secret = "01c9f9b70103cf9e823a"
-cluster = "us2"
-    )
-    
-    # Disparando un evento a través de Pusher
-    pusher_client.trigger("canalRegistroEncuesta", "registroEventoEncuests", {
-        "nombreapellido": nombre_apellido,
-        "telefono": telefono,
-        "fecha": fecha
-    })
+        # Disparar un evento a través de Pusher
+        pusher_client.trigger("canalRegistroEncuesta", "registroEventoEncuests", {
+            "nombreapellido": nombre_apellido,
+            "telefono": telefono,
+            "fecha": fecha
+        })
 
-    return "Datos guardados correctamente.", 200  # Devuelve un código 200 para indicar éxito
+        return "Datos guardados correctamente.", 200
+
+    except mysql.connector.Error as err:
+        return f"Error en la base de datos: {err}", 500  # Devuelve un error 500 si hay un problema en la BD
 
 # Ruta para buscar y mostrar los registros
 @app.route("/buscar")
 def buscar():
     if not con.is_connected():
         con.reconnect()
-        
-    cursor = con.cursor()
-    cursor.execute("SELECT * FROM tst0_experiencias ORDER BY Id_Experiencia DESC")
-    registros = cursor.fetchall()
-    cursor.close()  # Cierra el cursor aquí
-    
-    # Devuelve los registros como un JSON
-    return jsonify(registros)
+
+    try:
+        cursor = con.cursor()
+        cursor.execute("SELECT * FROM tst0_experiencias ORDER BY Id_Experiencia DESC")
+        registros = cursor.fetchall()
+        cursor.close()
+
+        # Devolver los registros como un JSON
+        return jsonify(registros), 200
+
+    except mysql.connector.Error as err:
+        return f"Error al buscar registros: {err}", 500  # Devuelve un error 500 si hay un problema
 
 if __name__ == "__main__":
     app.run(debug=True)
