@@ -3,12 +3,15 @@ import pusher
 import mysql.connector
 
 # Conectar a la base de datos
-con = mysql.connector.connect(
-    host="185.232.14.52",
-    database="u760464709_tst_sep",
-    user="u760464709_tst_sep_usr",
-    password="dJ0CIAFF="
-)
+def connect_db():
+    return mysql.connector.connect(
+        host="185.232.14.52",
+        database="u760464709_tst_sep",
+        user="u760464709_tst_sep_usr",
+        password="dJ0CIAFF="
+    )
+
+con = connect_db()
 
 app = Flask(__name__)
 
@@ -50,11 +53,14 @@ def guardar():
         cursor.close()
 
         # Disparar un evento a través de Pusher
-        pusher_client.trigger("canalRegistroEncuesta", "registroEventoEncuests", {
-            "nombreapellido": nombre_apellido,
-            "telefono": telefono,
-            "fecha": fecha
-        })
+        try:
+            pusher_client.trigger("canalRegistroEncuesta", "registroEventoEncuests", {
+                "nombreapellido": nombre_apellido,
+                "telefono": telefono,
+                "fecha": fecha
+            })
+        except Exception as pusher_error:
+            return f"Error al enviar el evento a Pusher: {pusher_error}", 500
 
         return "Datos guardados correctamente.", 200
 
