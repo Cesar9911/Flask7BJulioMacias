@@ -3,97 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reserva Habitación</title>
-
-    <!-- Librerías de Bootstrap, jQuery y jQuery Validation -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.3/dist/jquery.validate.min.js"></script>
-
-    <style>
-        label.error {
-            color: red;
-        }
-    </style>
+    <title>Gestión de Reservas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body>
+    <div class="container mt-4">
+        <h1>Gestión de Reservas</h1>
 
-    <div class="container mt-5">
-        <h2>Reserva Habitación</h2>
-        <p>Por favor, completa el siguiente formulario para reservar una habitación:</p>
-        
-        <form id="reservaForm">
+        <!-- Formulario para agregar/editar reserva -->
+        <form id="frmReserva" method="post">
+            <input type="hidden" id="id_reserva" name="id_reserva">
             <div class="mb-3">
-                <label for="nombreapellido" class="form-label">Nombre y Apellido</label>
-                <input type="text" class="form-control" id="nombreapellido" name="nombreapellido" required>
+                <label for="nombre_apellido" class="form-label">Nombre y Apellido</label>
+                <input type="text" id="nombre_apellido" name="nombre_apellido" class="form-control" required>
             </div>
             <div class="mb-3">
                 <label for="telefono" class="form-label">Teléfono</label>
-                <input type="text" class="form-control" id="telefono" name="telefono" required>
+                <input type="text" id="telefono" name="telefono" class="form-control" required>
             </div>
             <div class="mb-3">
-                <label for="fecha" class="form-label">Fecha de Reserva</label>
-                <input type="date" class="form-control" id="fecha" name="fecha" required>
+                <label for="fecha" class="form-label">Fecha</label>
+                <input type="date" id="fecha" name="fecha" class="form-control" required>
             </div>
-            <button type="submit" class="btn btn-primary">Reservar</button>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <button type="reset" class="btn btn-secondary">Cancelar</button>
         </form>
 
-        <!-- Tabla de CDU proporcionada -->
-        <p><b>Nombre del Alumno: </b></p>
-        <table class="table table-sm mt-5">
-            <!-- ... (mantengo tu tabla original aquí sin cambios) ... -->
+        <!-- Tabla de reservas -->
+        <h2 class="mt-4">Reservas Registradas</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre y Apellido</th>
+                    <th>Teléfono</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyReservas"></tbody>
         </table>
     </div>
 
-    <!-- Script para validaciones -->
     <script>
+        // Función para cargar la lista de reservas
+        function cargarReservas() {
+            $.get("/reservas", function (reservas) {
+                $("#tbodyReservas").html("");
+                reservas.forEach(function (reserva) {
+                    $("#tbodyReservas").append(`
+                        <tr>
+                            <td>${reserva.Id_Reserva}</td>
+                            <td>${reserva.Nombre_Apellido}</td>
+                            <td>${reserva.Telefono}</td>
+                            <td>${reserva.Fecha}</td>
+                            <td>
+                                <button class="btn btn-info btn-editar" data-id="${reserva.Id_Reserva}">Editar</button>
+                                <button class="btn btn-danger btn-eliminar" data-id="${reserva.Id_Reserva}">Eliminar</button>
+                            </td>
+                        </tr>
+                    `);
+                });
+            });
+        }
+
+        // Cargar reservas al iniciar la página
         $(document).ready(function () {
-            // Validaciones personalizadas usando jQuery Validation
-            $('#reservaForm').validate({
-                rules: {
-                    nombreapellido: {
-                        required: true,
-                        minlength: 10,
-                        maxlength: 50,
-                        lettersonly: true // Validación de solo letras
-                    },
-                    telefono: {
-                        required: true,
-                        digits: true,
-                        minlength: 10,
-                        maxlength: 10
-                    },
-                    fecha: {
-                        required: true,
-                        min: new Date().toISOString().split('T')[0] // No se puede elegir una fecha pasada
-                    }
-                },
-                messages: {
-                    nombreapellido: {
-                        required: "El nombre y apellido es obligatorio.",
-                        minlength: "Debe tener al menos 10 caracteres.",
-                        maxlength: "No puede tener más de 50 caracteres.",
-                        lettersonly: "Solo se permiten letras."
-                    },
-                    telefono: {
-                        required: "El teléfono es obligatorio.",
-                        digits: "Solo se permiten números.",
-                        minlength: "Debe contener exactamente 10 dígitos.",
-                        maxlength: "Debe contener exactamente 10 dígitos."
-                    },
-                    fecha: {
-                        required: "La fecha de reserva es obligatoria.",
-                        min: "No puedes elegir una fecha pasada."
-                    }
-                }
+            cargarReservas();
+
+            // Manejar el formulario de guardar
+            $("#frmReserva").submit(function (event) {
+                event.preventDefault();
+                $.post("/reservas/guardar", $(this).serialize(), function (response) {
+                    cargarReservas();
+                    $("#frmReserva").trigger("reset");
+                });
             });
 
-            // Agregar método personalizado para solo letras
-            $.validator.addMethod("lettersonly", function (value, element) {
-                return this.optional(element) || /^[a-zA-Z\s]+$/.test(value);
-            }, "Solo se permiten letras.");
+            // Editar reserva
+            $(document).on("click", ".btn-editar", function () {
+                const id_reserva = $(this).data("id");
+                $.get("/reservas/editar", { id_reserva: id_reserva }, function (reserva) {
+                    $("#id_reserva").val(reserva.Id_Reserva);
+                    $("#nombre_apellido").val(reserva.Nombre_Apellido);
+                    $("#telefono").val(reserva.Telefono);
+                    $("#fecha").val(reserva.Fecha);
+                });
+            });
+
+            // Eliminar reserva
+            $(document).on("click", ".btn-eliminar", function () {
+                if (!confirm("¿Estás seguro de eliminar esta reserva?")) {
+                    return;
+                }
+                const id_reserva = $(this).data("id");
+                $.post("/reservas/eliminar", { id_reserva: id_reserva }, function () {
+                    cargarReservas();
+                });
+            });
         });
     </script>
-
 </body>
 </html>
