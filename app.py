@@ -38,11 +38,10 @@ def guardar():
 
     # Conexión con Pusher
     pusher_client = pusher.Pusher(
-        app_id="1766032",
-        key="e7b4efacf7381f83e05e",
-        secret="134ff4754740b57ad585",
-        cluster="us2",
-        ssl=True
+    app_id = "1875540"
+key = "73801e00502db5454777"
+secret = "01c9f9b70103cf9e823a"
+cluster = "us2"
     )
     
     # Disparando un evento a través de Pusher
