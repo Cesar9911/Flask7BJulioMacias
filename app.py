@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, make_response
 import mysql.connector
+import pusher
 
 # Configuración de la conexión a la base de datos
 con = mysql.connector.connect(
@@ -7,6 +8,15 @@ con = mysql.connector.connect(
     database="u760464709_tst_sep",
     user="u760464709_tst_sep_usr",
     password="dJ0CIAFF="
+)
+
+# Configuración de Pusher
+pusher_client = pusher.Pusher(
+    app_id="1874485",
+    key="970a7d4d6af4b86adcc6",
+    secret="2e26ccd3273ad909a49d",
+    cluster="us2",
+    ssl=True
 )
 
 app = Flask(__name__)
@@ -64,6 +74,9 @@ def guardar_reserva():
     con.commit()
     con.close()
 
+    # Notificar sobre la actualización/inserción de la reserva
+    notificar_actualizacion_reservas()
+
     return make_response(jsonify({"status": "success"}))
 
 # Función para obtener los datos de una reserva específica
@@ -92,7 +105,14 @@ def eliminar_reserva():
     con.commit()
     con.close()
 
+    # Notificar sobre la eliminación de la reserva
+    notificar_actualizacion_reservas()
+
     return make_response(jsonify({"status": "success"}))
+
+# Función para notificar actualizaciones en las reservas a través de Pusher
+def notificar_actualizacion_reservas():
+    pusher_client.trigger("canalReservas", "actualizacion", {})
 
 if __name__ == "__main__":
     app.run(debug=True)
